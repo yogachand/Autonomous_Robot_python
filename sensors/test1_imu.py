@@ -94,6 +94,7 @@ try:
                         z-=calib["deadzone_z_a"]
                     else:
                         z+=calib["deadzone_z_a"]
+                
                 velocity_x += x * dt
                 velocity_y += y * dt
                 velocity_z += z * dt

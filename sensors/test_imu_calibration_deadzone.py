@@ -51,9 +51,9 @@ try:
             bias_x_g, bias_y_g, bias_z_g = np.mean(x_g), np.mean(y_g), np.mean(z_g)
 
             # Calculate deadzones (max peak-to-peak noise variation * 1.1)
-            deadzone_x_a = np.max(np.abs(x_a - bias_x_a)) * 1.1
-            deadzone_y_a = np.max(np.abs(y_a - bias_y_a)) * 1.1
-            deadzone_z_a = np.max(np.abs(z_a - bias_z_a)) * 1.1
+            deadzone_x_a = np.max(np.abs(x_a - bias_x_a)) 
+            deadzone_y_a = np.max(np.abs(y_a - bias_y_a)) 
+            deadzone_z_a = np.max(np.abs(z_a - bias_z_a)) 
             
             deadzone_x_g = np.max(np.abs(x_g - bias_x_g)) * 1.1
             deadzone_y_g = np.max(np.abs(y_g - bias_y_g)) * 1.1

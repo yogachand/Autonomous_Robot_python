@@ -26,7 +26,7 @@ distance_z = 0.0
 
 speed = 0.0
 distance = 0.0
-alpha_ = 0.05
+alpha_ = 0.386
 
 filter_acc_x = None
 filter_acc_y = None
@@ -46,7 +46,7 @@ try:
             for msg, metadata in handler:
                 if isinstance(msg, MsgImuRaw):
                     count += 1
-                    if count >= 100:
+                    if count >= 10:
                         break
 
                     raw_x_acc = ((msg.acc_x / raw_count)*g - calib["x_bias"]) 
@@ -85,9 +85,27 @@ try:
                     #     filter_gyr_y = alpha_ * raw_y_gyr + (1 - alpha_) * filter_gyr_y
                     #     filter_gyr_z = alpha_ * raw_z_gyr + (1 - alpha_) * filter_gyr_z
 
-                    linear_acc_x = filter_acc_x 
-                    linear_acc_y = filter_acc_y  
-                    linear_acc_z = filter_acc_z 
+
+                    
+
+                    if abs(filter_acc_x)< 1.1*calib["deadzone_x_a"]:
+                        x=0
+                    else:
+                        x=filter_acc_x
+                        
+                    if abs(filter_acc_y)< 1.1*calib["deadzone_y_a"]:
+                        y=0
+                    else:
+                        y=filter_acc_y
+
+                    if abs(filter_acc_z)< 1.1*calib["deadzone_z_a"]:
+                        z=0
+                    else:
+                        z=filter_acc_z
+
+                    linear_acc_x = x
+                    linear_acc_y = y
+                    linear_acc_z = z
 
                     # xgyr = filter_gyr_x / GYRO_SENSITIVITY
                     # ygyr = filter_gyr_y / GYRO_SENSITIVITY
@@ -103,13 +121,14 @@ try:
 
                     speed = math.sqrt(velocity_x**2 + velocity_y**2 + velocity_z**2)
                     distance = math.sqrt(distance_x**2 + distance_y**2 + distance_z**2)
-    print("callibration",raw_x_acc,raw_y_acc,raw_z_acc)
-
-    print("acc:", linear_acc_x, linear_acc_y, linear_acc_z)
-    # print("gyr", xgyr, ygyr, zgyr)
-    print("vel:", velocity_x, velocity_y, velocity_z)
-    print("dist:", distance_x, distance_y, distance_z)
-    print("speed:", speed, "distance:", distance)
+                    
+                    print("calibrated_acceleration",raw_x_acc,raw_y_acc,raw_z_acc)
+                    print("low pass filter value:", filter_acc_x, filter_acc_y, filter_acc_z)
+                    print("acc:", linear_acc_x, linear_acc_y, linear_acc_z)
+                    # print("gyr", xgyr, ygyr, zgyr)
+                    print("vel:", velocity_x, velocity_y, velocity_z)
+                    print("dist:", distance_x, distance_y, distance_z)
+                    print("speed:", speed, "distance:", distance)
 
 except KeyboardInterrupt:
     print("Stopped by user.")
