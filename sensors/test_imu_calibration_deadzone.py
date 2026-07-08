@@ -55,12 +55,11 @@ try:
             deadzone_y_a = np.max(np.abs(y_a - bias_y_a)) 
             deadzone_z_a = np.max(np.abs(z_a - bias_z_a)) 
             
-            deadzone_x_g = np.max(np.abs(x_g - bias_x_g)) * 1.1
-            deadzone_y_g = np.max(np.abs(y_g - bias_y_g)) * 1.1
-            deadzone_z_g = np.max(np.abs(z_g - bias_z_g)) * 1.1
+            deadzone_x_g = np.max(np.abs(x_g - bias_x_g)) 
+            deadzone_y_g = np.max(np.abs(y_g - bias_y_g)) 
+            deadzone_z_g = np.max(np.abs(z_g - bias_z_g)) 
 
             # Convert raw biases into physical units (m/s² and degrees/s)
-            # Note: Removed the 'count' division here because mean/max already handles the scaling
             x_bias = (bias_x_a / RAW_COUNT) * G_METERS_PER_SEC2
             y_bias = (bias_y_a / RAW_COUNT) * G_METERS_PER_SEC2
             z_bias = (bias_z_a / RAW_COUNT) * G_METERS_PER_SEC2
