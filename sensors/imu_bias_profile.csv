@@ -1,0 +1,11 @@
+Parameter_Bias,Bias_Value,Parameter_Variance,Variance_Value
+x_accl_bias,-0.36457866381835935,x_accl_variance,0.000198063423640602
+y_accl_bias,-0.6402045197753906,y_accl_variance,0.0001684939794498079
+z_accl_bias,-9.633962102294921,z_accl_variance,0.0011761431138274793
+x_gyro_bias,-0.25309451219512197,x_gyro_variance,0.01513332356078904
+y_gyro_bias,-1.5432012195121951,y_gyro_variance,0.014097723443615371
+z_gyro_bias,0.13009146341463418,z_gyro_variance,0.0083112676498148
+
+Algorithm Global Parameter,Value
+Acceleration Noise Variance (σa²),0.0005142335056392964
+Angular Rate Noise Variance (σω²),0.012514104884739738
