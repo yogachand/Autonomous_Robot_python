@@ -14,6 +14,7 @@ HOST = '195.37.48.233'
 PORT = 55555
 raw_count = 4096
 g = 9.8065
+GYRO_SENSITIVITY = 131.2 
 
 previous_time = None
 
@@ -23,10 +24,16 @@ distance_x, distance_y, distance_z = 0.0, 0.0, 0.0
 speed = 0.0
 distance = 0.0
 
+# --- FIX: roll/pitch must persist across loop iterations, not reset each cycle ---
+roll, pitch = 0.0, 0.0
+
 # Slightly higher alpha means faster tracking response for quick short movements
 alpha_ = 0.40
-
+alpha_cf = 0.40
+accel_roll  = 0
+accel_pitch = 0
 filter_acc_x, filter_acc_y, filter_acc_z = None, None, None
+filter_gyr_x,filter_gyr_y,filter_gyr_z = None, None,None
 
 # A shorter window (8-10 samples) reacts faster to sudden stops
 window_len = 2
@@ -76,14 +83,27 @@ try:
                         raw_y_acc = ((msg.acc_y / raw_count) * g) - calib["y_accl_bias"] 
                         raw_z_acc = ((msg.acc_z / raw_count) * g) - calib["z_accl_bias"] 
 
+                        raw_x_gyr = math.radians((msg.gyr_x/GYRO_SENSITIVITY) - calib["x_g_bias"])
+                        raw_y_gyr = math.radians((msg.gyr_y/GYRO_SENSITIVITY) - calib["y_g_bias"])
+                        raw_z_gyr = math.radians((msg.gyr_z/GYRO_SENSITIVITY) - calib["z_g_bias"])
+
                         current_time = time()
+                        imu_time = (msg.tow + msg.tow_f / 256.0) / 1000.0  # -> seconds
                         if previous_time is None:
-                            previous_time = current_time
+                            previous_time = imu_time
                             continue
 
-                        dt = current_time - previous_time
-                        previous_time = current_time
+                        dt = imu_time - previous_time
+                        previous_time = imu_time
+                        if dt <= 0 or dt > 1.0:
+                            continue
                         
+                        # --- FIX: Calculate actual tilt angles from accelerometer readings
+                        # using raw_x_acc/y/z + their calibrated biases added back to preserve gravity components
+
+                            roll = math.atan2(-filter_acc_x, g)
+                            pitch  = math.atan2(filter_acc_y, g)
+
                         # Low pass filter 
                         if filter_acc_x is None:
                             filter_acc_x, filter_acc_y, filter_acc_z = raw_x_acc, raw_y_acc, raw_z_acc
@@ -92,12 +112,33 @@ try:
                             filter_acc_y = alpha_ * raw_y_acc + (1 - alpha_) * filter_acc_y
                             filter_acc_z = alpha_ * raw_z_acc + (1 - alpha_) * filter_acc_z
                         
-                        window_x_acc.append(filter_acc_x)
-                        window_y_acc.append(filter_acc_y)
-                        window_z_acc.append(filter_acc_z)
+                        if filter_gyr_x is None:
+                            filter_gyr_x, filter_gyr_y, filter_gyr_z = raw_x_gyr, raw_y_gyr, raw_z_gyr
+                            # --- FIX: Initialize orientation on frame 1 to prevent dynamic filter jump
+                            roll = accel_roll
+                            pitch = accel_pitch
+                        else:
+                            filter_gyr_x = alpha_ * raw_x_gyr + (1 - alpha_) * filter_gyr_x
+                            filter_gyr_y = alpha_ * raw_y_gyr + (1 - alpha_) * filter_gyr_y
+                            filter_gyr_z = alpha_ * raw_z_gyr + (1 - alpha_) * filter_gyr_z                            
+
+                            # --- FIX: Corrected to use alpha_cf and the updated accel_roll/pitch terms
+                            roll  = alpha_cf * (roll + raw_x_gyr * dt)  + (1 - alpha_cf) * accel_roll
+                            pitch = alpha_cf * (pitch + raw_y_gyr * dt) + (1 - alpha_cf) * accel_pitch
+
+                        gx = -g * math.sin(pitch)
+                        gy =  g * math.cos(pitch) * math.sin(roll)
+                        gz =  g * math.cos(pitch) * math.cos(roll)        
+                        
+                        x = filter_acc_x - gx
+                        y = filter_acc_y - gy
+                        z = filter_acc_z - (gz - g)   
+                                                
+                        window_x_acc.append(x)
+                        window_y_acc.append(y)
+                        window_z_acc.append(z)
 
                         if len(window_x_acc) == window_len:
-                            # --- FIX 1: Removed np.abs(). We need the true directional mean. ---
                             mean_x = np.mean(window_x_acc)
                             var_x_acc = np.var(window_x_acc, ddof=1)
                             mean_y = np.mean(window_y_acc)
@@ -105,50 +146,22 @@ try:
                             mean_z = np.mean(window_z_acc)
                             var_z_acc = np.var(window_z_acc, ddof=1)
 
-                            # --- FIX 2: Check absolute thresholds on the *mean*, not during integration ---
-                            x_stationary = (var_x_acc < var_thr_acc_x) and ((mean_x) < 2 * calib["deadzone_x_a"])
-                            y_stationary = (var_y_acc < var_thr_acc_y) and ((mean_y) < 2 * calib["deadzone_y_a"])
-                            z_stationary = (var_z_acc < var_thr_acc_z) and ((mean_z) < 2 * calib["deadzone_z_a"])
+                            x_stationary = (var_x_acc < var_thr_acc_x) and (abs(mean_x) < 1.1 * calib["deadzone_x_a"])
+                            y_stationary = (var_y_acc < var_thr_acc_y) and (abs(mean_y) < 1.1 * calib["deadzone_y_a"])
+                            z_stationary = (var_z_acc < var_thr_acc_z) and (abs(mean_z) < 1.1 * calib["deadzone_z_a"])
 
-                            # # --- FIX 3: Do not hard-wipe velocity instantly if variance drops ---
-                            # # Let the real acceleration handle the math. Only force 0 if truly stationary.
-                            # x = 0.0 if x_stationary else filter_acc_x
-                            # y = 0.0 if y_stationary else filter_acc_y
-                            # z = 0.0 if z_stationary else filter_acc_z
-
-                            # if x_stationary: velocity_x = 0.0
-                            # if y_stationary: velocity_y = 0.0
-                            # if z_stationary: velocity_z = 0.0
-
-                            print(x_stationary,y_stationary,z_stationary)
-                            
                             if x_stationary and y_stationary and z_stationary:
-                                x,y,z = 0, 0, 0
-                                velocity_x,velocity_y,velocity_z = 0, 0, 0
-                            else:
-                                x,y,z=filter_acc_x,filter_acc_y,filter_acc_z
+                                x, y, z = 0.0, 0.0, 0.0
+                                velocity_x, velocity_y, velocity_z = 0.0, 0.0, 0.0
                         else:
                             x, y, z = 0.0, 0.0, 0.0
-                            velocity_x,velocity_y,velocity_z=0,0,0
+                            velocity_x, velocity_y, velocity_z = 0.0, 0.0, 0.0
 
-                        # --- FIX 4: Removed `if abs(x) > 0.01` restriction ---
-                        # Allowing true positive and negative integration down to 0.0
-
-                        # Numerical integration step
-                        if abs(x) > 0.02:  # Sightly higher threshold for active integration
-                            velocity_x += x * dt
-                        else:
-                            velocity_x *= 0.85  # Digital friction: quickly drain lingering velocity to 0
-
-                        if abs(y) > 0.02:
-                            velocity_y += y * dt
-                        else:
-                            velocity_y *= 0.85
-
-                        if abs(z) > 0.02:
-                            velocity_z += z * dt
-                        else:
-                            velocity_z *= 0.85
+                        # --- FIX: Standard integration step. Removed the "digital friction" 
+                        # multiplier block which killed constant velocity tracking, trusting the stationary lock instead.
+                        velocity_x += x * dt
+                        velocity_y += y * dt
+                        velocity_z += z * dt
 
                         # Software Deadband applied safely to clean up lingering micro-drift
                         if abs(velocity_x) < 0.003: velocity_x = 0.0
@@ -163,14 +176,15 @@ try:
                         distance_cm = distance * 100
                         
                         status = "STATIONARY" if (velocity_x == 0 and velocity_y == 0 and velocity_z == 0) else "MOVING"
+
+                        print("acceleration_pitch_roll",accel_pitch,accel_roll)
+                        print("roll_pitch",roll,pitch)
+                        print("filter_acceleration", filter_acc_x, filter_acc_y, filter_acc_z)
+                        print("gravity_reading", filter_gyr_x, filter_gyr_y, filter_gyr_z)
                         print("acceleration", x, y, z)
-                        
-                        print("velocity",velocity_x,velocity_y,velocity_z)
-                        
-                        print("speed", speed)
-                        
-                        # print("variance", var_thr_acc_x, var_thr_acc_y, var_thr_acc_z)
-                        print("distance", distance_cm)
+                        # print("velocity", velocity_x, velocity_y, velocity_z)
+                        # print("speed", speed)
+                        # print("distance", distance_cm)
                         print("------------------------------------------------")
                         writer.writerow([
                                 current_time, x, y, z,
