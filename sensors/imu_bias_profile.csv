@@ -1,11 +1,11 @@
 Parameter_Bias,Bias_Value,Parameter_Variance,Variance_Value
-x_accl_bias,-0.36457866381835935,x_accl_variance,0.000198063423640602
-y_accl_bias,-0.6402045197753906,y_accl_variance,0.0001684939794498079
-z_accl_bias,-9.633962102294921,z_accl_variance,0.0011761431138274793
-x_gyro_bias,-0.25309451219512197,x_gyro_variance,0.01513332356078904
-y_gyro_bias,-1.5432012195121951,y_gyro_variance,0.014097723443615371
-z_gyro_bias,0.13009146341463418,z_gyro_variance,0.0083112676498148
+x_accl_bias,-0.22360543798828128,x_accl_variance,0.00042464770974300206
+y_accl_bias,-0.590726705078125,y_accl_variance,0.00015432994734547808
+z_accl_bias,-9.610221561767577,z_accl_variance,0.00043913567599524194
+x_gyro_bias,-0.3407621951219512,x_gyro_variance,0.009166459964843431
+y_gyro_bias,-1.2602743902439024,y_gyro_variance,0.012686578354507948
+z_gyro_bias,0.1416310975609756,z_gyro_variance,0.00822860283140642
 
 Algorithm Global Parameter,Value
-Acceleration Noise Variance (σa²),0.0005142335056392964
-Angular Rate Noise Variance (σω²),0.012514104884739738
+Acceleration Noise Variance (σa²),0.00033937111102790734
+Angular Rate Noise Variance (σω²),0.010027213716919265

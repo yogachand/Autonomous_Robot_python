@@ -120,7 +120,8 @@ try:
                             # if y_stationary: velocity_y = 0.0
                             # if z_stationary: velocity_z = 0.0
 
-
+                            print(x_stationary,y_stationary,z_stationary)
+                            
                             if x_stationary and y_stationary and z_stationary:
                                 x,y,z = 0, 0, 0
                                 velocity_x,velocity_y,velocity_z = 0, 0, 0
