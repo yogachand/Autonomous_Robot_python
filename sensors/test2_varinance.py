@@ -47,7 +47,17 @@ try:
                 ["y_gyro_bias", np.mean(y_gyr), "y_gyro_variance", np.var(y_gyr, ddof=1)],
                 ["z_gyro_bias", np.mean(z_gyr), "z_gyro_variance", np.var(z_gyr, ddof=1)],
             ]
-            
+
+            max_xacc,max_yacc,max_zacc = np.max(x_acc),np.max(y_acc),np.max(z_acc)
+            min_xacc,min_yacc,min_zacc = np.min(x_acc),np.min(y_acc),np.min(z_acc)
+            max_xgyc,max_ygyc,max_zgyc = np.max(x_gyr),np.max(y_gyr),np.max(z_gyr)
+            min_xgyc,min_ygyc,min_zgyc = np.min(x_gyr),np.min(y_gyr),np.min(z_gyr)
+
+            print("maximum_acceleration",max_xacc,max_yacc,max_zacc)
+            print("minimum_acceleration",min_xacc,min_yacc,min_zacc)
+            print("maximum_gyro",max_xgyc,max_ygyc,max_zgyc)
+            print("minimum_gyro",min_xgyc,min_ygyc,min_zgyc)
+
             # Calculate the global averages your AWGF-ZVD algorithm requests
             global_sigma_a_sq = np.mean([analysis_data[0][3], analysis_data[1][3], analysis_data[2][3]])
             global_sigma_w_sq = np.mean([analysis_data[3][3], analysis_data[4][3], analysis_data[5][3]])
