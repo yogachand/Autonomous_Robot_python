@@ -67,7 +67,6 @@ try:
             
             with open(filename, "w", newline="") as f:
                 writer = csv.writer(f)
-                
                 # Write the individual axis data
                 writer.writerow(["Parameter_Bias", "Bias_Value", "Parameter_Variance", "Variance_Value"])
                 for row in analysis_data:
