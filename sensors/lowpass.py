@@ -29,14 +29,14 @@ roll, pitch = 0.0, 0.0
 
 # Slightly higher alpha means faster tracking response for quick short movements
 alpha_ = 0.40
-alpha_cf = 0.40
+alpha_cf = 0.98
 accel_roll  = 0
 accel_pitch = 0
 filter_acc_x, filter_acc_y, filter_acc_z = None, None, None
 filter_gyr_x,filter_gyr_y,filter_gyr_z = None, None,None
 
 # A shorter window (8-10 samples) reacts faster to sudden stops
-window_len = 2
+window_len = 10
 window_x_acc = deque(maxlen=window_len)
 window_y_acc = deque(maxlen=window_len)
 window_z_acc = deque(maxlen=window_len)
@@ -46,7 +46,7 @@ try:
         with Handler(Framer(driver.read, driver.write)) as handler:
             print("Initiating connection...")
 
-            with open("imu_calibration.json", "r") as f:
+            with open("imu_calibration1000.json", "r") as f:
                 calib = json.load(f)
 
             with open("imu_bias_profile.csv", "r") as f:
@@ -95,7 +95,7 @@ try:
 
                         dt = imu_time - previous_time
                         previous_time = imu_time
-                        print(raw_x_acc,raw_y_acc,raw_z_acc)
+                        print("raw_acceleration_after_biasing",raw_x_acc,raw_y_acc,raw_z_acc)
                         if dt <= 0 or dt > 1.0:
                             continue
                         
@@ -159,9 +159,9 @@ try:
                             mean_z = np.mean(window_z_acc)
                             var_z_acc = np.var(window_z_acc, ddof=1)
 
-                            x_stationary = (var_x_acc < var_thr_acc_x) and (abs(mean_x) < 2 * calib["deadzone_x_a"])
-                            y_stationary = (var_y_acc < var_thr_acc_y) and (abs(mean_y) < 2 * calib["deadzone_y_a"])
-                            z_stationary = (var_z_acc < var_thr_acc_z) and (abs(mean_z) < 2 * calib["deadzone_z_a"])
+                            x_stationary = (var_x_acc < var_thr_acc_x) and (abs(mean_x) < 2 * 1.1 * calib["deadzone_x_a"])
+                            y_stationary = (var_y_acc < var_thr_acc_y) and (abs(mean_y) < 2 * 1.1 * calib["deadzone_y_a"])
+                            z_stationary = (var_z_acc < var_thr_acc_z) and (abs(mean_z) < 2 * 1.1 * calib["deadzone_z_a"])
 
                             if x_stationary and y_stationary and z_stationary:
                                 x, y, z = 0.0, 0.0, 0.0

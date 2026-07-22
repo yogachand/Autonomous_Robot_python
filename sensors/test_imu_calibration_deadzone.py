@@ -24,8 +24,7 @@ try:
             # Correctly initialize separate empty lists
             x_acc, y_acc, z_acc = [], [], []
             x_gyr, y_gyr, z_gyr = [], [], []
-
-            samples_needed = 500
+            samples_needed = 1000
             count = 0
 
             # Stream incoming data until we have enough samples
